@@ -1,18 +1,16 @@
-import {
-  IonPage,
-  IonHeader,
-  IonItem,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonList,
-  IonToggle,
-  IonLabel,
-} from "@ionic/react";
+import { IonPage, IonHeader, IonItem, IonToolbar, IonTitle, IonContent, IonList, IonToggle, IonLabel, IonButton } from "@ionic/react";
+import { useIonRouter } from "@ionic/react";
 import useAppStore from "../hooks/useStore";
+import { supabase } from "../lib/supabase/client";
 
 const Settings = () => {
   const { settings, setSettings } = useAppStore();
+  const router = useIonRouter();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
 
   return (
     <IonPage>
@@ -34,6 +32,9 @@ const Settings = () => {
                 });
               }}
             />
+          </IonItem>
+          <IonItem button onClick={handleLogout}>
+            <IonLabel>Logout</IonLabel>
           </IonItem>
         </IonList>
       </IonContent>

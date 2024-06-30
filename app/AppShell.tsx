@@ -1,7 +1,7 @@
 import { IonApp, IonRouterOutlet, setupIonicReact } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 import { Redirect, Route } from "react-router-dom";
-import { supabase } from "./lib/supabaseClient";
+import { supabase } from "./lib/supabase/client";
 import Tabs from "./components/Tabs";
 
 import "@ionic/react/css/ionic.bundle.css";
