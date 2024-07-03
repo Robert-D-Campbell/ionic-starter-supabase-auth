@@ -1,77 +1,101 @@
 import { useState } from "react";
-import {
-  IonButton,
-  IonContent,
-  IonHeader,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonPage,
-  IonTitle,
-  IonToolbar,
-  useIonToast,
-  useIonLoading,
-} from "@ionic/react";
+import { IonButton, IonContent, IonHeader, IonInput, IonItem, IonLabel, IonList, IonPage, IonTitle, IonToolbar, useIonLoading } from "@ionic/react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signInSchema } from "@/lib/schemas";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { supabase } from "../lib/supabase/client";
 
 export function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
   const [showLoading, hideLoading] = useIonLoading();
-  const [showToast] = useIonToast();
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const [error, setError] = useState<string | null>(null);
+  const form = useForm<z.infer<typeof signInSchema>>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof signInSchema>) => {
     await showLoading();
-    try {
-      await supabase.auth.signInWithPassword({ email, password });
-      await showToast({ message: "Successfully logged in", duration: 5000 });
-    } catch (e: any) {
-      await showToast({ message: e.error_description || e.message, duration: 5000 });
-    } finally {
-      await hideLoading();
+
+    const { error, data } = await supabase.auth.signInWithPassword({ email: values.email, password: values.password });
+    console.log({ error, data });
+    if (error) {
+      setError(error.message);
     }
+
+    await hideLoading();
   };
+
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Login</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent>
-        <div className="ion-padding">
-          <h1>Supabase + Ionic React</h1>
-        </div>
-        <IonList inset={true}>
-          <form onSubmit={handleLogin}>
-            <IonItem>
-              <IonLabel id="lbl-email" position="stacked">
-                Email
-              </IonLabel>
-              <IonInput value={email} name="email" onIonChange={(e) => setEmail(e.detail.value ?? "")} type="email" aria-labelledby="lbl-email"></IonInput>
-            </IonItem>
-            <IonItem>
-              <IonLabel id="lbl-password" position="stacked">
-                Password
-              </IonLabel>
-              <IonInput
-                value={password}
-                name="password"
-                onIonChange={(e) => setPassword(e.detail.value ?? "")}
-                type="password"
-                aria-labelledby="lbl-password"
-              ></IonInput>
-            </IonItem>
-            <div className="ion-text-center">
-              <IonButton type="submit" fill="clear">
-                Login
-              </IonButton>
+        <div className="flex h-full w-full items-center justify-center">
+          <div className="flex w-full flex-1 flex-col justify-center gap-4 px-8 sm:max-w-md">
+            <h2 className="text-3xl font-medium tracking-wider mb-2">Login</h2>
+            {error && (
+              <div className="mt-4 text-center text-sm text-red-500">
+                <p>{error}</p>
+              </div>
+            )}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field, fieldState }) => (
+                        <FormItem>
+                          <FormLabel htmlFor="email">Email</FormLabel>
+                          <FormControl>
+                            <Input id="email" type="email" {...field} className={cn({ "outline outline-red-600": fieldState.invalid })} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field, fieldState }) => (
+                        <FormItem>
+                          <FormLabel htmlFor="password">Password</FormLabel>
+                          <FormControl>
+                            <Input id="password" type="password" {...field} className={cn({ "outline outline-red-600": fieldState.invalid })} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    Login
+                  </Button>
+                </div>
+              </form>
+            </Form>
+            <div className="mt-4 text-center text-sm">
+              <a href="/forgot-password" className="underline">
+                Forgot your password?
+              </a>
             </div>
-          </form>
-        </IonList>
+            <div className="mt-4 text-center text-sm">
+              Don&apos;t have an account?{" "}
+              <a href="/register" className="underline">
+                Sign up
+              </a>
+            </div>
+          </div>
+        </div>
       </IonContent>
     </IonPage>
   );
