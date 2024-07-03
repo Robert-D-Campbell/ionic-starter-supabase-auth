@@ -1,24 +1,21 @@
 import { useState } from "react";
-import { IonButton, IonContent, IonHeader, IonInput, IonItem, IonLabel, IonList, IonPage, IonTitle, IonToolbar, useIonLoading } from "@ionic/react";
+import { IonContent, IonPage, useIonLoading } from "@ionic/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signInSchema } from "@/lib/schemas";
+import { signInSchema, signInSchemaInitialValues } from "@/lib/schemas";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { supabase } from "../lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 
-export function LoginPage() {
+export default function Login() {
   const [showLoading, hideLoading] = useIonLoading();
   const [error, setError] = useState<string | null>(null);
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: signInSchemaInitialValues,
   });
 
   const onSubmit = async (values: z.infer<typeof signInSchema>) => {

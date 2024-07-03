@@ -6,7 +6,7 @@ const nextConfig = {
   rewrites: () => {
     return [
       {
-        source: "/tabs/:path*",
+        source: "/:path*",
         destination: "/",
       },
     ];

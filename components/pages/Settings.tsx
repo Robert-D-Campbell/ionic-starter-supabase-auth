@@ -1,7 +1,6 @@
-import { IonPage, IonHeader, IonItem, IonToolbar, IonTitle, IonContent, IonList, IonToggle, IonLabel, IonButton } from "@ionic/react";
-import { useIonRouter } from "@ionic/react";
-import useAppStore from "../hooks/useStore";
-import { supabase } from "../lib/supabase/client";
+import { IonPage, IonHeader, IonItem, IonToolbar, IonTitle, IonContent, IonList, IonToggle, IonLabel, useIonRouter } from "@ionic/react";
+import useAppStore from "@/lib/hooks/useStore";
+import { supabase } from "@/lib/supabase/client";
 
 const Settings = () => {
   const { settings, setSettings } = useAppStore();
