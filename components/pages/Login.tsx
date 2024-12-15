@@ -4,7 +4,14 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, signInSchemaInitialValues } from "@/lib/schemas";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,7 +28,11 @@ export default function Login() {
   const onSubmit = async (values: z.infer<typeof signInSchema>) => {
     await showLoading();
 
-    const { error, data } = await supabase.auth.signInWithPassword({ email: values.email, password: values.password });
+    // const { data, error } = await supabase.auth.signUp({ email: values.email, password: values.password });
+    const { error, data } = await supabase.auth.signInWithPassword({
+      email: values.email,
+      password: values.password,
+    });
     console.log({ error, data });
     if (error) {
       setError(error.message);
@@ -52,7 +63,14 @@ export default function Login() {
                         <FormItem>
                           <FormLabel htmlFor="email">Email</FormLabel>
                           <FormControl>
-                            <Input id="email" type="email" {...field} className={cn({ "outline outline-red-600": fieldState.invalid })} />
+                            <Input
+                              id="email"
+                              type="email"
+                              {...field}
+                              className={cn({
+                                "outline outline-red-600": fieldState.invalid,
+                              })}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -67,7 +85,14 @@ export default function Login() {
                         <FormItem>
                           <FormLabel htmlFor="password">Password</FormLabel>
                           <FormControl>
-                            <Input id="password" type="password" {...field} className={cn({ "outline outline-red-600": fieldState.invalid })} />
+                            <Input
+                              id="password"
+                              type="password"
+                              {...field}
+                              className={cn({
+                                "outline outline-red-600": fieldState.invalid,
+                              })}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
