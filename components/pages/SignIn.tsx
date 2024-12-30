@@ -3,7 +3,7 @@ import { IonContent, IonPage, useIonLoading } from "@ionic/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signInSchema, signInSchemaInitialValues } from "@/lib/schemas";
+import { authSchema, authSchemaInitialValues } from "@/lib/schemas";
 import {
   Form,
   FormControl,
@@ -20,15 +20,14 @@ import { supabase } from "@/lib/supabase/client";
 export default function Login() {
   const [showLoading, hideLoading] = useIonLoading();
   const [error, setError] = useState<string | null>(null);
-  const form = useForm<z.infer<typeof signInSchema>>({
-    resolver: zodResolver(signInSchema),
-    defaultValues: signInSchemaInitialValues,
+  const form = useForm<z.infer<typeof authSchema>>({
+    resolver: zodResolver(authSchema),
+    defaultValues: authSchemaInitialValues,
   });
 
-  const onSubmit = async (values: z.infer<typeof signInSchema>) => {
+  const onSubmit = async (values: z.infer<typeof authSchema>) => {
     await showLoading();
 
-    // const { data, error } = await supabase.auth.signUp({ email: values.email, password: values.password });
     const { error, data } = await supabase.auth.signInWithPassword({
       email: values.email,
       password: values.password,
@@ -46,7 +45,7 @@ export default function Login() {
       <IonContent>
         <div className="flex h-full w-full items-center justify-center">
           <div className="flex w-full flex-1 flex-col justify-center gap-4 px-8 sm:max-w-md">
-            <h2 className="text-3xl font-medium tracking-wider mb-2">Login</h2>
+            <h2 className="text-3xl font-medium tracking-wider mb-2">Welcome Back!</h2>
             {error && (
               <div className="mt-4 text-center text-sm text-red-500">
                 <p>{error}</p>
@@ -100,7 +99,7 @@ export default function Login() {
                     />
                   </div>
                   <Button type="submit" className="w-full">
-                    Login
+                    Sign in
                   </Button>
                 </div>
               </form>

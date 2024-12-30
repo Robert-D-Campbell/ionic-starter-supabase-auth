@@ -110,6 +110,12 @@ npx cap open ios
 npx cap open android
 ```
 
+If you have permission issues
+
+```bash
+sudo chmod 777 -R /dev/kvm
+```
+
 ### Live Reload
 
 For live reload on devices, ensure your development server is accessible as configured in `capacitor.config.ts`. Adjust the `hostname` to match your development environment if necessary.
@@ -141,3 +147,173 @@ Contributions are welcome. Please review our contributing guidelines before subm
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Initial Databse Schema
+
+```
+CREATE TYPE recipient_type_enum AS ENUM('profiles', 'clans', 'squads');
+
+CREATE TYPE post_target_type_enum AS ENUM('profiles', 'clans', 'communities');
+
+CREATE TABLE
+  profiles (
+    id uuid PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+    display_name VARCHAR(100) NOT NULL unique,
+    bio TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  );
+
+CREATE TABLE
+  profile_friends (
+    profile_id uuid NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+    friend_id uuid NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+    PRIMARY KEY (profile_id, friend_id)
+  );
+
+CREATE TABLE
+  games (
+    id uuid PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    community_id uuid
+  );
+
+CREATE TABLE
+  communities (
+    id uuid PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  );
+
+ALTER TABLE games
+ADD CONSTRAINT games_community_id_fk FOREIGN KEY (community_id) REFERENCES communities (id) ON DELETE SET NULL;
+
+CREATE TABLE
+  clans (
+    id uuid PRIMARY KEY,
+    game_id uuid NOT NULL REFERENCES games (id) ON DELETE CASCADE,
+    community_id uuid REFERENCES communities (id) ON DELETE SET NULL,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  );
+
+CREATE TABLE
+  clan_members (
+    clan_id uuid NOT NULL REFERENCES clans (id) ON DELETE CASCADE,
+    profile_id uuid NOT NULL REFERENCES profiles (id) ON DELETE CASCADE
+  );
+
+CREATE TABLE
+  squads (
+    id uuid PRIMARY KEY,
+    game_id uuid NOT NULL REFERENCES games (id) ON DELETE CASCADE,
+    clan_id uuid REFERENCES clans (id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  );
+
+CREATE TABLE
+  squad_members (
+    squad_id uuid NOT NULL REFERENCES squads (id) ON DELETE CASCADE,
+    profile_id uuid NOT NULL REFERENCES profiles (id) ON DELETE CASCADE
+  );
+
+CREATE TABLE
+  profile_games (
+    profile_id uuid NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+    game_id uuid NOT NULL REFERENCES games (id) ON DELETE CASCADE,
+    PRIMARY KEY (profile_id, game_id)
+  );
+
+CREATE TABLE
+  posts (
+    id uuid PRIMARY KEY,
+    author_profile_id uuid NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  );
+
+CREATE TABLE
+  post_targets (
+    post_id uuid NOT NULL REFERENCES posts (id) ON DELETE CASCADE,
+    target_type post_target_type_enum NOT NULL,
+    target_id uuid NOT NULL,
+    PRIMARY KEY (post_id, target_type, target_id)
+  );
+
+CREATE TABLE
+  messages (
+    id uuid PRIMARY KEY,
+    sender_profile_id uuid NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+    recipient_type recipient_type_enum NOT NULL,
+    recipient_id uuid NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  );
+
+CREATE
+OR REPLACE FUNCTION update_timestamp () RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER profile_update_timestamp BEFORE
+UPDATE ON profiles FOR EACH ROW
+EXECUTE PROCEDURE update_timestamp ();
+
+CREATE
+OR REPLACE FUNCTION add_friend (p_profile_id UUID, p_friend_id UUID) RETURNS VOID AS $$
+BEGIN
+    INSERT INTO profile_friends (profile_id, friend_id)
+    VALUES (p_profile_id, p_friend_id)
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO profile_friends (profile_id, friend_id)
+    VALUES (p_friend_id, p_profile_id)
+    ON CONFLICT DO NOTHING;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE
+OR REPLACE FUNCTION remove_friend () RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM profile_friends WHERE profile_id = OLD.friend_id AND friend_id = OLD.profile_id;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER remove_friend_symmetry
+AFTER DELETE ON profile_friends FOR EACH ROW
+EXECUTE PROCEDURE remove_friend ();
+
+create function public.handle_new_user () returns trigger language plpgsql security definer
+set
+  search_path = '' as $$
+begin
+  insert into profiles (id, display_name)
+  values (new.id, new.raw_user_meta_data ->> 'display_name');
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+after insert on auth.users for each row
+execute procedure public.handle_new_user ();
+
+CREATE INDEX idx_profiles_display_name ON profiles (display_name);
+
+CREATE INDEX idx_posts_author ON posts (author_profile_id);
+
+CREATE INDEX idx_posts_created_at ON posts (created_at);
+
+CREATE INDEX idx_messages_recipient ON messages (recipient_type, recipient_id);
+
+CREATE INDEX idx_post_targets_by_target ON post_targets (target_type, target_id);
+
+CREATE INDEX idx_clan_members_clan ON clan_members (clan_id);
+
+CREATE INDEX idx_squad_members_squad ON squad_members (squad_id);
+
+```

@@ -6,7 +6,8 @@ import { StatusBar, Style } from "@capacitor/status-bar";
 import { supabase } from "@/lib/supabase/client";
 import { Session } from "@supabase/supabase-js";
 
-import Login from "@/components/pages/Login";
+import Login from "@/components/pages/SignIn";
+import Signup from "@/components/pages/SignUp";
 import Home from "@/components/pages/Home";
 import Settings from "@/components/pages/Settings";
 import NotFound from "@/components/pages/NotFound";
@@ -45,6 +46,7 @@ const AppShell = () => {
     <IonApp>
       <IonReactRouter>
         <IonRouterOutlet id="main">
+          <Route exact path="/register" component={Signup} />
           <Route exact path="/" component={session ? Home : Login} />
           <Route exact path="/settings" component={Settings} />
           <Route component={NotFound} />
